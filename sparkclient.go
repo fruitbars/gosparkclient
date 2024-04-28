@@ -39,7 +39,7 @@ type SparkChatRequest struct {
 	QuestionType string
 }
 
-func init() {
+func loadEnv(envName string) {
 	const (
 		AppIdEnvVarName       = "SPARKAI_APP_ID"     //nolint:gosec
 		ApiKeyEnvVarName      = "SPARKAI_API_KEY"    //nolint:gosec
@@ -48,7 +48,7 @@ func init() {
 		BaseURLEnvVarName     = "SPARKAI_URL" //nolint:gosec
 	)
 
-	err := godotenv.Load()
+	err := godotenv.Load(envName)
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -60,10 +60,25 @@ func init() {
 	SPARK_DOMAIN = os.Getenv(SparkDomainEnvVarName)
 }
 
+func init() {
+	loadEnv(".env")
+}
+
 // CallbackFunc 用于回调处理响应
 type CallbackFunc func(response SparkAPIResponse)
 
 func NewSparkClient() *SparkClient {
+	return &SparkClient{
+		AppID:     SPARK_APP_ID,
+		ApiSecret: SPARK_API_SECRET,
+		ApiKey:    SPARK_API_KEY,
+		HostURL:   SPARK_API_URL,
+		Domain:    SPARK_DOMAIN,
+	}
+}
+
+func NewSparkClientWithEnv(envName string) *SparkClient {
+	loadEnv(envName)
 	return &SparkClient{
 		AppID:     SPARK_APP_ID,
 		ApiSecret: SPARK_API_SECRET,
