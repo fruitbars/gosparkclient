@@ -6,6 +6,7 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -38,6 +39,8 @@ type SparkChatRequest struct {
 	His          HisContent
 	QuestionType string
 }
+
+var once sync.Once
 
 func loadEnv(envName string) {
 	const (
@@ -78,7 +81,9 @@ func NewSparkClient() *SparkClient {
 }
 
 func NewSparkClientWithEnv(envName string) *SparkClient {
-	loadEnv(envName)
+	once.Do(func() {
+		loadEnv(envName)
+	})
 	return &SparkClient{
 		AppID:     SPARK_APP_ID,
 		ApiSecret: SPARK_API_SECRET,
