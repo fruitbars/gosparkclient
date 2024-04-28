@@ -73,6 +73,16 @@ func NewSparkClient() *SparkClient {
 	}
 }
 
+func NewSparkClientWithOptions(appid, apikey, apisecret, hostURL, domain string) *SparkClient {
+	return &SparkClient{
+		AppID:     appid,
+		ApiSecret: apikey,
+		ApiKey:    apisecret,
+		HostURL:   hostURL,
+		Domain:    domain,
+	}
+}
+
 func (client *SparkClient) SparkChatSimple(prompt string) (string, string, error) {
 	req := SparkChatRequest{
 		Prompt: prompt,
