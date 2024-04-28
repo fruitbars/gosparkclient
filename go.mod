@@ -1,4 +1,4 @@
-module gosparkclient
+module github.com/fruitbars/gosparkclient
 
 go 1.18
 
