@@ -29,7 +29,7 @@ func testDefeult() {
 	log.Println(sid, r)
 }
 
-func testEnv() {
+func testWithEnv() {
 	client := gosparkclient.NewSparkClientWithEnv("dev_v3.env")
 
 	r, sid, err := client.SparkChatSimple("你好")
@@ -54,5 +54,6 @@ func testEnv() {
 }
 
 func main() {
-
+	testDefeult()
+	testWithEnv()
 }
