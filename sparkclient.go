@@ -5,20 +5,21 @@ import (
 	"errors"
 	"github.com/joho/godotenv"
 	"log"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-var (
-	SPARK_API_KEY    string
-	SPARK_API_SECRET string
-	SPARK_API_URL    string
-	SPARK_APP_ID     string
-	SPARK_DOMAIN     string
+const (
+	AppIdEnvVarName       = "SPARKAI_APP_ID"     //nolint:gosec
+	ApiKeyEnvVarName      = "SPARKAI_API_KEY"    //nolint:gosec
+	ApiSecretEnvVarName   = "SPARKAI_API_SECRET" //nolint:gosec
+	SparkDomainEnvVarName = "SPARKAI_DOMAIN"
+	BaseURLEnvVarName     = "SPARKAI_URL" //nolint:gosec
 )
+
+const defaultEnvName = ".env"
 
 // SparkClient 包含与 API 交互所需的配置信息
 type SparkClient struct {
@@ -40,57 +41,59 @@ type SparkChatRequest struct {
 	QuestionType string
 }
 
-var once sync.Once
-
-func loadEnv(envName string) {
-	const (
-		AppIdEnvVarName       = "SPARKAI_APP_ID"     //nolint:gosec
-		ApiKeyEnvVarName      = "SPARKAI_API_KEY"    //nolint:gosec
-		ApiSecretEnvVarName   = "SPARKAI_API_SECRET" //nolint:gosec
-		SparkDomainEnvVarName = "SPARKAI_DOMAIN"
-		BaseURLEnvVarName     = "SPARKAI_URL" //nolint:gosec
-	)
-
-	err := godotenv.Load(envName)
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	SPARK_API_KEY = os.Getenv(ApiKeyEnvVarName)
-	SPARK_API_SECRET = os.Getenv(ApiSecretEnvVarName)
-	SPARK_API_URL = os.Getenv(BaseURLEnvVarName)
-	SPARK_APP_ID = os.Getenv(AppIdEnvVarName)
-	SPARK_DOMAIN = os.Getenv(SparkDomainEnvVarName)
-}
-
-func init() {
-	loadEnv(".env")
-}
+var (
+	loadEnvLock   sync.Mutex
+	loadedEnvs    map[string]bool
+	clientConfigs map[string]*SparkClient // 存储每个环境的客户端配置
+)
 
 // CallbackFunc 用于回调处理响应
 type CallbackFunc func(response SparkAPIResponse)
 
-func NewSparkClient() *SparkClient {
-	return &SparkClient{
-		AppID:     SPARK_APP_ID,
-		ApiSecret: SPARK_API_SECRET,
-		ApiKey:    SPARK_API_KEY,
-		HostURL:   SPARK_API_URL,
-		Domain:    SPARK_DOMAIN,
+func init() {
+	loadedEnvs = make(map[string]bool)
+	clientConfigs = make(map[string]*SparkClient)
+	loadEnvIfNeeded(defaultEnvName) // 使用改进后的函数直接加载默认环境
+}
+
+// loadEnvIfNeeded 检查并加载指定环境配置，如果尚未加载
+func loadEnvIfNeeded(envName string) *SparkClient {
+	loadEnvLock.Lock()
+	defer loadEnvLock.Unlock()
+
+	// 检查配置是否已加载
+	if client, exists := clientConfigs[envName]; exists {
+		return client
 	}
+
+	// 加载环境配置文件
+	env, err := godotenv.Read(envName)
+	if err != nil {
+		log.Fatal("Error loading .env file:", err)
+	}
+
+	// 读取环境变量并创建新的SparkClient实例
+	client := &SparkClient{
+		AppID:     env[AppIdEnvVarName],
+		ApiSecret: env[ApiSecretEnvVarName],
+		ApiKey:    env[ApiKeyEnvVarName],
+		HostURL:   env[BaseURLEnvVarName],
+		Domain:    env[SparkDomainEnvVarName],
+	}
+
+	// 保存到全局配置存储中
+	clientConfigs[envName] = client
+	loadedEnvs[envName] = true
+
+	return client
+}
+
+func NewSparkClient() *SparkClient {
+	return loadEnvIfNeeded(defaultEnvName)
 }
 
 func NewSparkClientWithEnv(envName string) *SparkClient {
-	once.Do(func() {
-		loadEnv(envName)
-	})
-	return &SparkClient{
-		AppID:     SPARK_APP_ID,
-		ApiSecret: SPARK_API_SECRET,
-		ApiKey:    SPARK_API_KEY,
-		HostURL:   SPARK_API_URL,
-		Domain:    SPARK_DOMAIN,
-	}
+	return loadEnvIfNeeded(envName)
 }
 
 func NewSparkClientWithOptions(appid, apikey, apisecret, hostURL, domain string) *SparkClient {
