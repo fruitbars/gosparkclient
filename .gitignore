@@ -1,0 +1,47 @@
+# .gitignore 文件的内容示例
+
+# 忽略操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+.env
+test/test
+# 忽略编译生成的文件
+*.o
+*.pyc
+__pycache__/
+*.class
+
+# 忽略日志文件和数据库
+*.log
+*.db
+*.sqlite
+
+# 忽略项目中使用的虚拟环境或包管理器的缓存
+venv/
+node_modules/
+*.egg-info/
+
+# 忽略编辑器和IDE的配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+
+# 忽略小型的临时文件
+*.tmp
+
+# 忽略配置文件，这些文件通常包含敏感信息
+config.json
+config.ini
+
+# 其他可能需要的忽略项
+*.min.js
+*.min.css
+*.map
+
+# 确保不忽略你的项目核心文件
+!main.py
+!app.js
