@@ -101,8 +101,8 @@ func NewSparkClientWithEnv(envName string) *SparkClient {
 func NewSparkClientWithOptions(appid, apikey, apisecret, hostURL, domain string) *SparkClient {
 	return &SparkClient{
 		AppID:     appid,
-		ApiSecret: apikey,
-		ApiKey:    apisecret,
+		ApiSecret: apisecret,
+		ApiKey:    apikey,
 		HostURL:   hostURL,
 		Domain:    domain,
 	}
