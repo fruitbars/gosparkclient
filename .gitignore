@@ -6,6 +6,8 @@ Thumbs.db
 
 .env
 test/test
+test/trans.env
+test/.env
 # 忽略编译生成的文件
 *.o
 *.pyc

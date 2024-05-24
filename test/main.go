@@ -7,6 +7,7 @@ import (
 
 func testDefeult() {
 	client := gosparkclient.NewSparkClient()
+	log.Println(client.AppID, client.HostURL)
 
 	r, sid, err := client.SparkChatSimple("你好")
 	if err != nil {
@@ -15,7 +16,13 @@ func testDefeult() {
 	log.Println(sid, r)
 
 	r, sid, err = client.SparkChatWithCallback(gosparkclient.SparkChatRequest{
-		Prompt: "你好",
+		Message: []struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		}{
+			{Role: "user", Content: "Hello, how are you?"},
+			{Role: "assistant", Content: "I'm fine, thank you!"},
+		},
 	}, func(response gosparkclient.SparkAPIResponse) {
 		if len(response.Payload.Choices.Text) > 0 {
 			log.Println(response.Header.Sid, response.Payload.Choices.Text[0].Content)
@@ -29,17 +36,17 @@ func testDefeult() {
 	log.Println(sid, r)
 }
 
-func testWithEnv() {
-	client := gosparkclient.NewSparkClientWithEnv("dev_v3.env")
+func testWithEnv(envName string, prompt string) {
+	client := gosparkclient.NewSparkClientWithEnv(envName)
+	log.Println(client.AppID, client.HostURL, client.Domain)
 
-	r, sid, err := client.SparkChatSimple("你好")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	log.Println(sid, r)
-
-	r, sid, err = client.SparkChatWithCallback(gosparkclient.SparkChatRequest{
-		Prompt: "你好",
+	r, sid, err := client.SparkChatWithCallback(gosparkclient.SparkChatRequest{
+		Message: []struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		}{
+			{Role: "user", Content: prompt},
+		},
 	}, func(response gosparkclient.SparkAPIResponse) {
 		if len(response.Payload.Choices.Text) > 0 {
 			log.Println(response.Header.Sid, response.Payload.Choices.Text[0].Content)
@@ -54,6 +61,6 @@ func testWithEnv() {
 }
 
 func main() {
-	testDefeult()
-	testWithEnv()
+	//testDefeult()
+	testWithEnv("trans.env", "翻译为英文：你好")
 }

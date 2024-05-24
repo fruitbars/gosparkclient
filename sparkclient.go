@@ -32,12 +32,14 @@ type SparkClient struct {
 
 // SparkChatRequest 封装了调用 Spark API 所需的所有参数
 type SparkChatRequest struct {
-	Prompt       string
+	Message []struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	} `json:"text"`
 	Temperature  float64
 	Topk         int
 	Maxtokens    int
 	System       string
-	His          HisContent
 	QuestionType string
 }
 
@@ -107,13 +109,19 @@ func NewSparkClientWithOptions(appid, apikey, apisecret, hostURL, domain string)
 }
 
 func (client *SparkClient) SparkChatSimple(prompt string) (string, string, error) {
-	req := SparkChatRequest{
-		Prompt: prompt,
+	req := SparkChatRequest{}
+	newMessage := struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	}{
+		Role:    "user",
+		Content: prompt,
 	}
+	req.Message = append(req.Message, newMessage)
+
 	return client.SparkChatWithCallback(req, nil)
 }
 
-// CallSpark 发起与 Spark API 的通信，使用 SparkChatRequest 结构体简化参数
 func (client *SparkClient) SparkChatWithCallback(req SparkChatRequest, callback CallbackFunc) (string, string, error) {
 	d := websocket.Dialer{
 		HandshakeTimeout: 5 * time.Second,
@@ -169,16 +177,17 @@ func (client *SparkClient) genReqJson(usrReq SparkChatRequest) *SparkAPIRequest 
 			Content string `json:"content"`
 		}{Role: "system", Content: usrReq.System})
 	}
-	for _, text := range usrReq.His.Text {
+
+	// 填充Payload.Message.Text
+	for _, msg := range usrReq.Message {
 		req.Payload.Message.Text = append(req.Payload.Message.Text, struct {
 			Role    string `json:"role"`
 			Content string `json:"content"`
-		}{Role: text.Role, Content: text.Content})
+		}{
+			Role:    msg.Role,
+			Content: msg.Content,
+		})
 	}
-	req.Payload.Message.Text = append(req.Payload.Message.Text, struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	}{Role: "user", Content: usrReq.Prompt})
 
 	req.Header.AppID = client.AppID
 	req.Header.UID = "12345"

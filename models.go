@@ -76,19 +76,3 @@ type SparkAPIResponse struct {
 		} `json:"plugins,omitempty"`
 	} `json:"payload"`
 }
-
-// HisContent 用于管理历史对话内容
-type HisContent struct {
-	Text []struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	}
-}
-
-// AddContent 添加一条对话内容
-func (his *HisContent) AddContent(role, content string) {
-	his.Text = append(his.Text, struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	}{Role: role, Content: content})
-}
