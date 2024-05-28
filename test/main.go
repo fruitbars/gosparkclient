@@ -1,31 +1,34 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/fruitbars/gosparkclient"
 	"log"
 )
 
-func testDefeult() {
+func testCallBack() {
 	client := gosparkclient.NewSparkClient()
 	log.Println(client.AppID, client.HostURL)
-
-	r, sid, err := client.SparkChatSimple("你好")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	log.Println(sid, r)
-
-	r, sid, err = client.SparkChatWithCallback(gosparkclient.SparkChatRequest{
+	resp, err := client.SparkChatWithCallback(gosparkclient.SparkChatRequest{
 		Message: []struct {
 			Role    string `json:"role"`
 			Content string `json:"content"`
 		}{
 			{Role: "user", Content: "Hello, how are you?"},
-			{Role: "assistant", Content: "I'm fine, thank you!"},
 		},
 	}, func(response gosparkclient.SparkAPIResponse) {
 		if len(response.Payload.Choices.Text) > 0 {
-			log.Println(response.Header.Sid, response.Payload.Choices.Text[0].Content)
+			//log.Println(response.Header.Sid, response.Payload.Choices.Text[0].Content)
+			log.Println(response)
+			// 将结构体转换为 JSON 字符串
+			jsonData, err := json.Marshal(response)
+			if err != nil {
+				log.Println("Error marshalling to JSON:", err)
+				return
+			}
+
+			// 输出 JSON 字符串
+			log.Println(string(jsonData))
 		}
 
 	})
@@ -33,14 +36,42 @@ func testDefeult() {
 		log.Fatalln(err)
 	}
 
-	log.Println(sid, r)
+	jsonData, err := json.MarshalIndent(resp, "", "    ")
+	if err != nil {
+		log.Println("Error marshalling to JSON:", err)
+		return
+	}
+
+	// 输出 JSON 字符串
+	log.Println("all result:", string(jsonData))
+
+}
+
+func testDefeult() {
+	client := gosparkclient.NewSparkClient()
+	log.Println(client.AppID, client.HostURL)
+
+	resp, err := client.SparkChatSimple("你好")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	jsonData, err := json.MarshalIndent(resp, "", "    ")
+	if err != nil {
+		log.Println("Error marshalling to JSON:", err)
+		return
+	}
+
+	// 输出 JSON 字符串
+	log.Println(string(jsonData))
+
 }
 
 func testWithEnv(envName string, prompt string) {
 	client := gosparkclient.NewSparkClientWithEnv(envName)
 	log.Println(client.AppID, client.HostURL, client.Domain)
 
-	r, sid, err := client.SparkChatWithCallback(gosparkclient.SparkChatRequest{
+	resp, err := client.SparkChatWithCallback(gosparkclient.SparkChatRequest{
 		Message: []struct {
 			Role    string `json:"role"`
 			Content string `json:"content"`
@@ -57,10 +88,12 @@ func testWithEnv(envName string, prompt string) {
 		log.Fatalln(err)
 	}
 
-	log.Println(sid, r)
+	log.Println(resp)
 }
 
 func main() {
-	//testDefeult()
-	testWithEnv("trans.env", "翻译为英文：你好")
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	testDefeult()
+	//testWithEnv("trans.env", "翻译为英文：你好")
+	testCallBack()
 }

@@ -108,7 +108,7 @@ func NewSparkClientWithOptions(appid, apikey, apisecret, hostURL, domain string)
 	}
 }
 
-func (client *SparkClient) SparkChatSimple(prompt string) (string, string, error) {
+func (client *SparkClient) SparkChatSimple(prompt string) (*SparkAPIResponse, error) {
 	req := SparkChatRequest{}
 	newMessage := struct {
 		Role    string `json:"role"`
@@ -122,7 +122,7 @@ func (client *SparkClient) SparkChatSimple(prompt string) (string, string, error
 	return client.SparkChatWithCallback(req, nil)
 }
 
-func (client *SparkClient) SparkChatWithCallback(req SparkChatRequest, callback CallbackFunc) (string, string, error) {
+func (client *SparkClient) SparkChatWithCallback(req SparkChatRequest, callback CallbackFunc) (*SparkAPIResponse, error) {
 	d := websocket.Dialer{
 		HandshakeTimeout: 5 * time.Second,
 	}
@@ -131,14 +131,14 @@ func (client *SparkClient) SparkChatWithCallback(req SparkChatRequest, callback 
 	conn, resp, err := d.Dial(authURL, nil)
 	if err != nil {
 		log.Printf("Failed to establish WebSocket connection: %v, %s, %s\n", err, ReadResp(resp), authURL)
-		return "", "", err
+		return nil, err
 	}
 	defer conn.Close()
 
 	data := client.genReqJson(req)
 	if err := conn.WriteJSON(data); err != nil {
 		log.Printf("Failed to send message: %v\n", err)
-		return "", "", err
+		return nil, err
 	}
 	var response SparkAPIResponse
 	var answer string
@@ -153,7 +153,7 @@ func (client *SparkClient) SparkChatWithCallback(req SparkChatRequest, callback 
 			break
 		}
 		if response.Header.Code != 0 {
-			return "", response.Header.Sid, errors.New(response.Header.Message)
+			return nil, errors.New(response.Header.Message)
 		}
 		if len(response.Payload.Choices.Text) > 0 {
 			answer += response.Payload.Choices.Text[0].Content
@@ -165,7 +165,12 @@ func (client *SparkClient) SparkChatWithCallback(req SparkChatRequest, callback 
 			break
 		}
 	}
-	return answer, response.Header.Sid, err
+
+	if len(response.Payload.Choices.Text) > 0 {
+		response.Payload.Choices.Text[0].Content = answer
+	}
+
+	return &response, err
 }
 
 // genReqJson 生成请求 JSON
