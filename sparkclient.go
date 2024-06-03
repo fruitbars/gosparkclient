@@ -206,7 +206,7 @@ func (client *SparkClient) genReqJson(usrReq SparkChatRequest) *SparkAPIRequest 
 		req.Parameter.Chat.QuestionType = usrReq.QuestionType
 	}
 
-	req.Functions = usrReq.Functions
+	req.Functions.Text = usrReq.Functions
 
 	return &req
 }
