@@ -41,6 +41,7 @@ type SparkChatRequest struct {
 	Maxtokens    int
 	System       string
 	QuestionType string
+	Functions    json.RawMessage `json:"functions,omitempty"`
 }
 
 var (
@@ -204,5 +205,8 @@ func (client *SparkClient) genReqJson(usrReq SparkChatRequest) *SparkAPIRequest 
 	if usrReq.QuestionType != "" {
 		req.Parameter.Chat.QuestionType = usrReq.QuestionType
 	}
+
+	req.Functions = usrReq.Functions
+
 	return &req
 }

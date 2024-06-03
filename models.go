@@ -1,5 +1,7 @@
 package gosparkclient
 
+import "encoding/json"
+
 type SparkAPIRequest struct {
 	Header struct {
 		AppID string `json:"app_id"`
@@ -23,6 +25,7 @@ type SparkAPIRequest struct {
 			} `json:"text"`
 		} `json:"message"`
 	} `json:"payload"`
+	Functions json.RawMessage `json:"functions,omitempty"`
 }
 
 type SparkAPIResponse struct {
