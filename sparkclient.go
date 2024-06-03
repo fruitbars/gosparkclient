@@ -72,7 +72,7 @@ func loadEnvIfNeeded(envName string) *SparkClient {
 	// 加载环境配置文件
 	env, err := godotenv.Read(envName)
 	if err != nil {
-		log.Println("Error loading .env file:", err)
+		log.Println("warning: Error loading .env file:", err)
 	}
 
 	// 读取环境变量并创建新的SparkClient实例
@@ -206,7 +206,14 @@ func (client *SparkClient) genReqJson(usrReq SparkChatRequest) *SparkAPIRequest 
 		req.Parameter.Chat.QuestionType = usrReq.QuestionType
 	}
 
-	req.Functions.Text = usrReq.Functions
+	if usrReq.Functions != nil && len(usrReq.Functions) > 0 {
+
+		req.Functions = &struct {
+			Text json.RawMessage `json:"text,omitempty"`
+		}{
+			Text: usrReq.Functions,
+		}
+	}
 
 	return &req
 }

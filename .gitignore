@@ -8,6 +8,7 @@ Thumbs.db
 test/test
 test/trans.env
 test/.env
+test/spark-lite.env
 # 忽略编译生成的文件
 *.o
 *.pyc

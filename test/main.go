@@ -93,7 +93,7 @@ func testWithEnv(envName string, prompt string) {
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	testDefeult()
-	//testWithEnv("trans.env", "翻译为英文：你好")
-	testCallBack()
+	//testDefeult()
+	testWithEnv("spark-lite.env", "翻译为英文：你好")
+	//testCallBack()
 }

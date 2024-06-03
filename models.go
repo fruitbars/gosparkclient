@@ -25,7 +25,7 @@ type SparkAPIRequest struct {
 			} `json:"text"`
 		} `json:"message"`
 	} `json:"payload"`
-	Functions struct {
+	Functions *struct {
 		Text json.RawMessage `json:"text,omitempty"`
 	} `json:"functions,omitempty"`
 }
