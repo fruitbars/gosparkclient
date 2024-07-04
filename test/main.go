@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"github.com/fruitbars/gosparkclient"
 	"log"
+	"net"
+	"net/http"
+	"net/url"
+	"time"
 )
 
 func testCallBack() {
@@ -91,9 +95,35 @@ func testWithEnv(envName string, prompt string) {
 	log.Println(resp)
 }
 
+func testProxy() {
+	proxyURL, err := url.Parse("http://127.0.0.1:8999")
+	if err != nil {
+		log.Fatalf("Failed to parse proxy URL: %v", err)
+	}
+	transport := &http.Transport{
+		Proxy: http.ProxyURL(proxyURL),
+		DialContext: (&net.Dialer{
+			Timeout:   time.Duration(10) * time.Second,
+			KeepAlive: time.Duration(10) * time.Second,
+		}).DialContext,
+	}
+
+	client := gosparkclient.NewSparkClient()
+	client.Transport = transport
+
+	// 使用 SparkClient 发起请求
+	response, err := client.SparkChatSimple("Hello!")
+	if err != nil {
+		log.Fatalf("SparkChatSimple failed: %v", err)
+	}
+
+	log.Printf("Response: %v", response)
+}
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	//testDefeult()
-	testWithEnv("spark-lite.env", "翻译为英文：你好")
+	//testWithEnv("spark-lite.env", "翻译为英文：你好")
 	//testCallBack()
+	testProxy()
 }

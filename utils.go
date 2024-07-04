@@ -30,14 +30,12 @@ func (client *SparkClient) AssembleAuthURL(httpMethod string, hostURL string) st
 	return hostURL + "?" + v.Encode()
 }
 
-// HmacWithShaToBase64 计算 HMAC SHA256
 func HmacWithShaToBase64(algorithm, data, key string) string {
 	mac := hmac.New(sha256.New, []byte(key))
 	mac.Write([]byte(data))
 	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
-// readResp 读取响应
 func ReadResp(resp *http.Response) string {
 	if resp == nil {
 		return ""

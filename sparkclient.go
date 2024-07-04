@@ -3,12 +3,13 @@ package gosparkclient
 import (
 	"encoding/json"
 	"errors"
+	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	"log"
+	"net"
+	"net/http"
 	"sync"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 const (
@@ -19,7 +20,18 @@ const (
 	BaseURLEnvVarName     = "SPARKAI_URL" //nolint:gosec
 )
 
-const defaultEnvName = ".env"
+const (
+	defaultEnvName  = ".env"
+	defaultTimeout  = 30
+	defaultUID      = "12345"
+	defaultAuditing = "default"
+)
+
+var (
+	loadEnvLock   sync.Mutex
+	loadedEnvs    = make(map[string]bool)
+	clientConfigs = make(map[string]*SparkClient)
+)
 
 // SparkClient 包含与 API 交互所需的配置信息
 type SparkClient struct {
@@ -28,6 +40,7 @@ type SparkClient struct {
 	ApiKey    string
 	HostURL   string
 	Domain    string
+	Transport *http.Transport
 }
 
 // SparkChatRequest 封装了调用 Spark API 所需的所有参数
@@ -44,18 +57,10 @@ type SparkChatRequest struct {
 	Functions    json.RawMessage `json:"functions,omitempty"`
 }
 
-var (
-	loadEnvLock   sync.Mutex
-	loadedEnvs    map[string]bool
-	clientConfigs map[string]*SparkClient // 存储每个环境的客户端配置
-)
-
 // CallbackFunc 用于回调处理响应
 type CallbackFunc func(response SparkAPIResponse)
 
 func init() {
-	loadedEnvs = make(map[string]bool)
-	clientConfigs = make(map[string]*SparkClient)
 	loadEnvIfNeeded(defaultEnvName) // 使用改进后的函数直接加载默认环境
 }
 
@@ -106,6 +111,31 @@ func NewSparkClientWithOptions(appid, apikey, apisecret, hostURL, domain string)
 		ApiKey:    apikey,
 		HostURL:   hostURL,
 		Domain:    domain,
+		Transport: defaultTransport(),
+	}
+}
+
+func NewSparkClientWithOptionsAndTransport(appid, apikey, apisecret, hostURL, domain string, transport *http.Transport) *SparkClient {
+	// 如果没有传入 transport，则创建一个默认的 transport
+	if transport == nil {
+		transport = defaultTransport()
+	}
+	return &SparkClient{
+		AppID:     appid,
+		ApiSecret: apisecret,
+		ApiKey:    apikey,
+		HostURL:   hostURL,
+		Domain:    domain,
+		Transport: transport, // 传递外部 Transport
+	}
+}
+
+func defaultTransport() *http.Transport {
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout: defaultTimeout * time.Second,
+		}).DialContext,
 	}
 }
 
@@ -124,8 +154,11 @@ func (client *SparkClient) SparkChatSimple(prompt string) (*SparkAPIResponse, er
 }
 
 func (client *SparkClient) SparkChatWithCallback(req SparkChatRequest, callback CallbackFunc) (*SparkAPIResponse, error) {
+
 	d := websocket.Dialer{
-		HandshakeTimeout: 5 * time.Second,
+		HandshakeTimeout: defaultTimeout * time.Second,
+		NetDialContext:   client.Transport.DialContext,
+		Proxy:            client.Transport.Proxy,
 	}
 
 	authURL := client.AssembleAuthURL("GET", client.HostURL)
@@ -196,12 +229,12 @@ func (client *SparkClient) genReqJson(usrReq SparkChatRequest) *SparkAPIRequest 
 	}
 
 	req.Header.AppID = client.AppID
-	req.Header.UID = "12345"
+	req.Header.UID = defaultUID
 	req.Parameter.Chat.Domain = client.Domain
 	req.Parameter.Chat.Temperature = usrReq.Temperature
 	req.Parameter.Chat.TopK = usrReq.Topk
 	req.Parameter.Chat.MaxTokens = usrReq.Maxtokens
-	req.Parameter.Chat.Auditing = "default"
+	req.Parameter.Chat.Auditing = defaultAuditing
 	if usrReq.QuestionType != "" {
 		req.Parameter.Chat.QuestionType = usrReq.QuestionType
 	}
