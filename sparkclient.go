@@ -87,6 +87,7 @@ func loadEnvIfNeeded(envName string) *SparkClient {
 		ApiKey:    env[ApiKeyEnvVarName],
 		HostURL:   env[BaseURLEnvVarName],
 		Domain:    env[SparkDomainEnvVarName],
+		Transport: defaultTransport(),
 	}
 
 	// 保存到全局配置存储中
@@ -117,9 +118,6 @@ func NewSparkClientWithOptions(appid, apikey, apisecret, hostURL, domain string)
 
 func NewSparkClientWithOptionsAndTransport(appid, apikey, apisecret, hostURL, domain string, transport *http.Transport) *SparkClient {
 	// 如果没有传入 transport，则创建一个默认的 transport
-	if transport == nil {
-		transport = defaultTransport()
-	}
 	return &SparkClient{
 		AppID:     appid,
 		ApiSecret: apisecret,

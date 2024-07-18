@@ -123,7 +123,7 @@ func testProxy() {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	//testDefeult()
-	//testWithEnv("spark-lite.env", "翻译为英文：你好")
+	testWithEnv("spark-lite.env", "翻译为英文：你好")
 	//testCallBack()
-	testProxy()
+	//testProxy()
 }
