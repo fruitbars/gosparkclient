@@ -185,4 +185,4 @@ WithAuditing(auditing string)
 
 ## 相关文档
 
-- [讯飞星火认知大模型 API 文档](https://www.xfyun.cn/doc/spark/overview.html)
+- [讯飞星火认知大模型 API 文档](https://www.xfyun.cn/doc/spark/Web.html)
