@@ -1,71 +1,188 @@
-# SparkClient Go Library
-`SparkClient` 是一个Go语言库，用于与Spark AI的聊天API进行交互。它封装了创建请求、处理响应和WebSocket通信的逻辑，使得在Go应用程序中集成Spark AI服务变得简单。
+# gosparkclient
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/fruitbars/gosparkclient.svg)](https://pkg.go.dev/github.com/yourusername/gosparkclient)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fruitbars/gosparkclient)](https://goreportcard.com/report/github.com/yourusername/gosparkclient)
+[![License](https://img.shields.io/github/license/fruitbars/gosparkclient)](https://github.com/yourusername/gosparkclient/blob/main/LICENSE)
+
+gosparkclient 是一个用 Go 语言编写的讯飞星火认知大模型 API 客户端库，提供了简洁、易用且功能完备的接口。
+
+## 特性
+
+- 支持全部星火认知大模型 API
+- 支持流式输出（实时返回）
+- 支持多种调用方式（标准、简单、回调）
+- 优雅的错误处理
+- 完整的类型定义
+- 线程安全
+- 详细的文档和示例
 
 ## 安装
-使用`go get`命令安装：
+
 ```bash
-go get github.com/fruitbars/gosparkclient
+go get github.com/yourusername/gosparkclient
 ```
 
 ## 快速开始
-1. 确保你的项目中有一个`.env`文件，其中包含必要的环境变量，例如：
-   ```
-   SPARKAI_APP_ID=your_app_id
-   SPARKAI_API_KEY=your_api_key
-   SPARKAI_API_SECRET=your_api_secret
-   SPARKAI_DOMAIN=your_domain
-   SPARKAI_URL=your_base_url
-   ```
 
-2. 在你的Go代码中引入`SparkClient`库：
-   ```go
-   import "github.com/fruitbars/gosparkclient"
-   ```
-
-3. 使用`NewSparkClient`创建一个`SparkClient`实例，并使用其方法与API进行交互。
-
-## 使用示例
-以下是如何使用`SparkClient`发起一个简单的聊天请求的示例：
+### 基础用法
 
 ```go
 package main
 
 import (
+    "context"
+    "fmt"
     "log"
+    "time"
 
-    "github.com/fruitbars/gosparkclient"
+    "github.com/yourusername/gosparkclient"
 )
 
 func main() {
-    client := gosparkclient.NewSparkClient()
-
-    // 发起一个简单的聊天请求
-    r, sid, err := client.SparkChatSimple("你好")
+    // 创建客户端
+    client, err := gosparkclient.NewSparkClient(
+        gosparkclient.WithCredentials("your-app-id", "your-api-key", "your-api-secret"),
+        gosparkclient.WithURLs("wss://spark-api.xf-yun.com/v1.1/chat", ""),
+        gosparkclient.WithDomain("generalv1.1"),
+    )
     if err != nil {
-        log.Fatalln(err)
+        log.Fatal(err)
     }
-    log.Println("Session ID:", sid)
-    log.Println("Response:", r)
 
-    // 使用回调函数处理响应
-    r, sid, err = client.SparkChatWithCallback(gosparkclient.SparkChatRequest{
-        Prompt: "你好",
-    }, func(response gosparkclient.SparkAPIResponse) {
-        if len(response.Payload.Choices.Text) > 0 {
-            log.Println("Callback Response:", response.Payload.Choices.Text[0].Content)
-        }
-    })
+    // 创建上下文
+    ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+    defer cancel()
+
+    // 发送简单请求
+    resp, err := client.ChatSimple(ctx, "你好，请介绍一下你自己")
     if err != nil {
-        log.Fatalln(err)
+        log.Fatal(err)
     }
-    log.Println("Session ID:", sid)
-    log.Println("Response:", r)
+
+    fmt.Println(resp.Payload.Choices.Text[0].Content)
 }
 ```
 
+### 流式输出
+
+```go
+func streamingChat() {
+    client, err := gosparkclient.NewSparkClient(...)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    req := &gosparkclient.SparkChatRequest{
+        Messages: []gosparkclient.SparkMessage{
+            {
+                Role:    "user",
+                Content: "请写一首诗歌",
+            },
+        },
+    }
+
+    callback := func(resp *gosparkclient.SparkAPIResponse) {
+        if len(resp.Payload.Choices.Text) > 0 {
+            fmt.Print(resp.Payload.Choices.Text[0].Content)
+        }
+    }
+
+    err = client.ChatWithCallback(context.Background(), req, callback)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+### 更多参数设置
+
+```go
+func advancedChat() {
+    client, err := gosparkclient.NewSparkClient(...)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    req := &gosparkclient.SparkChatRequest{
+        Messages: []gosparkclient.SparkMessage{
+            {
+                Role:    "system",
+                Content: "你是一个专业的程序员",
+            },
+            {
+                Role:    "user",
+                Content: "请写一个快速排序算法",
+            },
+        },
+        Temperature: 0.5,
+        MaxTokens:   4096,
+    }
+
+    resp, err := client.Chat(context.Background(), req)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(resp.Payload.Choices.Text[0].Content)
+}
+```
+
+## 配置选项
+
+支持以下配置选项：
+
+```go
+// 配置认证信息
+WithCredentials(appID, apiKey, apiSecret string)
+
+// 配置 API 地址
+WithURLs(hostURL, embURL string)
+
+// 配置模型域
+WithDomain(domain string)
+
+// 配置超时时间
+WithTimeout(timeout time.Duration)
+
+// 配置用户ID
+WithUID(uid string)
+
+// 配置审计选项
+WithAuditing(auditing string)
+```
+
+## 错误处理
+
+库提供了详细的错误类型：
+
+- ConfigurationError: 配置错误
+- ConnectionError: 连接错误
+- AuthenticationError: 认证错误
+- RequestError: 请求错误
+- ResponseError: 响应错误
+- WebSocketError: WebSocket 错误
+
+每个错误都包含详细的错误信息和原始错误（如果有）。
+
+## 示例
+
+更多示例请查看 [examples](./examples) 目录。
 
 ## 贡献
-欢迎对`SparkClient`库做出贡献。如果你有任何问题或建议，请通过GitHub Issues提出。
+
+欢迎提交 Issues 和 Pull Requests！
 
 ## 许可证
-`SparkClient`是在[MIT License](LICENSE)下发布的开源软件。
+
+本项目采用 MIT 许可证，查看 [LICENSE](./LICENSE) 文件了解更多信息。
+
+## 鸣谢
+
+感谢所有贡献者以及以下开源项目：
+
+- [gorilla/websocket](https://github.com/gorilla/websocket)
+- [joho/godotenv](https://github.com/joho/godotenv)
+
+## 相关文档
+
+- [讯飞星火认知大模型 API 文档](https://www.xfyun.cn/doc/spark/overview.html)
