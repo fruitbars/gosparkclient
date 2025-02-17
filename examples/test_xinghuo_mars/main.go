@@ -58,6 +58,11 @@ func callbackChat(ctx context.Context, client *gosparkclient.SparkClient) {
 
 	// 定义回调函数来处理流式响应
 	callback := func(resp *gosparkclient.SparkAPIResponse) {
+		if len(resp.Payload.Choices.Text[0].ReasoningContent) > 0 {
+			rc := resp.Payload.Choices.Text[0].ReasoningContent
+			fmt.Print(rc)
+		}
+
 		if len(resp.Payload.Choices.Text) > 0 {
 			content := resp.Payload.Choices.Text[0].Content
 			fmt.Print(content)

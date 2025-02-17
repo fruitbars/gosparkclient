@@ -34,11 +34,12 @@ type SparkFunctionCall struct {
 
 // SparkChoice represents a single choice in the response
 type SparkChoice struct {
-	Content      string            `json:"content"`
-	Role         string            `json:"role"`
-	ContentType  string            `json:"content_type"`
-	FunctionCall SparkFunctionCall `json:"function_call"`
-	Index        int               `json:"index"`
+	Content          string            `json:"content"`
+	ReasoningContent string            `json:"reasoning_content,omitempty"`
+	Role             string            `json:"role"`
+	ContentType      string            `json:"content_type"`
+	FunctionCall     SparkFunctionCall `json:"function_call"`
+	Index            int               `json:"index"`
 }
 
 // SparkChatRequest represents a chat request to the Spark API
