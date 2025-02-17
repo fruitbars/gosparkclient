@@ -6,9 +6,12 @@ Thumbs.db
 
 .env
 test/test
-test/trans.env
-test/.env
-test/spark-lite.env
+examples/test_spark_api/trans.env
+examples/test_spark_api/.env
+examples/test_spark_api/spark-lite.env
+examples/test_xinghuo_mars/.env
+examples/test_xinghuo_mars/test_xinghuo_mars
+
 # 忽略编译生成的文件
 *.o
 *.pyc
